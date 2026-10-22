@@ -1,13 +1,20 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { createServer } from "node:http";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
-// @ts-expect-error: the eval harness is plain JavaScript.
-import { startRuntime } from "../../../scripts/eval/run.mjs";
+import { pathToFileURL } from "node:url";
 import { Saturn, SaturnError, type RunAction } from "../src/index.ts";
+
+/**
+ * The test starts a real Saturn runtime from a Saturn-App checkout: SATURN_APP_DIR, or one beside this repository
+ * (../Saturn-App). Its eval harness starts the runtime on a free port with a temporary data folder and token.
+ */
+const appDir = process.env.SATURN_APP_DIR ?? path.resolve(import.meta.dirname, "..", "..", "..", "..", "Saturn-App");
+const harness = path.join(appDir, "scripts", "eval", "run.mjs");
+const available = existsSync(harness) && existsSync(path.join(appDir, "runtime", "node_modules"));
 
 /** A model that writes a file with the shell, then answers. */
 async function scriptedModel() {
@@ -25,7 +32,8 @@ async function scriptedModel() {
   return { server, url: `http://127.0.0.1:${(server.address() as { port: number }).port}` };
 }
 
-test("the SDK starts runs, follows their steps, answers approvals, and refuses plan models", { timeout: 120_000 }, async () => {
+test("the SDK starts runs, follows their steps, answers approvals, and refuses plan models", { timeout: 120_000, skip: !available && `needs a Saturn-App checkout with the runtime installed (SATURN_APP_DIR, or ${appDir})` }, async () => {
+  const { startRuntime } = (await import(pathToFileURL(harness).href)) as { startRuntime: () => Promise<{ api: (method: string, route: string, body?: unknown) => Promise<any>; base: string; token: string; stop: () => Promise<void> }> };
   const model = await scriptedModel();
   const runtime = await startRuntime();
   try {

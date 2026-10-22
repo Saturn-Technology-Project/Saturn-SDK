@@ -1,0 +1,58 @@
+name: CI
+
+# Type-checks, builds and tests each SDK. The tests drive a real Saturn runtime from a Saturn-App checkout (main),
+# with a scripted model: no credentials, no tokens spent.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "41 3 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  typescript:
+    name: TypeScript SDK
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Saturn-App, for the runtime the tests drive
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: Saturn-Technology-Project/Saturn-App
+          path: saturn-app
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: saturn-app/Saturn-IDE/.nvmrc
+
+      - name: Install without running any install script
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund --prefix packages/typescript
+          npm ci --ignore-scripts --no-audit --no-fund --prefix saturn-app/runtime
+
+      - name: Git identity for the test project
+        run: git config --global user.name "Saturn CI" && git config --global user.email "ci@saturn.invalid"
+
+      - name: Type check and build
+        working-directory: packages/typescript
+        run: npm run typecheck && npm run build
+
+      - name: Test against a real runtime
+        working-directory: packages/typescript
+        env:
+          SATURN_APP_DIR: ${{ github.workspace }}/saturn-app
+        run: npm test
+
+      - name: Registry signatures
+        working-directory: packages/typescript
+        run: npm audit signatures

@@ -1,0 +1,40 @@
+{
+  "name": "@saturn-app/sdk",
+  "version": "0.1.0",
+  "description": "Drive the Saturn running on this computer from code: start agent runs, follow their steps, answer approvals.",
+  "license": "MIT",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "node --test 'test/*.test.ts'"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Saturn-Technology-Project/Saturn-SDK.git",
+    "directory": "packages/typescript"
+  },
+  "homepage": "https://github.com/Saturn-Technology-Project/Saturn-SDK/tree/main/packages/typescript#readme",
+  "bugs": {
+    "url": "https://github.com/Saturn-Technology-Project/Saturn-SDK/issues"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2",
+    "typescript": "^7.0.2"
+  },
+  "allowScripts": {}
+}
